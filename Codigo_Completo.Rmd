@@ -1,0 +1,2057 @@
+---
+title: "Introducción a los análisis estadísticos en R"
+author: "Javier Marín Morales y Lucía Amalia Carrasco Ribelles"
+output:
+  html_document:
+    echo: yes
+    number_sections: no
+    df_print: kable
+    theme: flatly #lumen, paper, readable, flatly
+    toc: yes
+    toc_float: yes
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# ¿Qué es este documento?
+
+En este archivo se puede encontrar todo el código presente en la 1ª
+edición de *Introducción a los análisis estadísticos en R*, de la
+editorial Marcombo.
+
+Las siguientes secciones de este archivo hacen referencia a los
+capítulos del libro original.
+
+# Capítulo 2. Instalación y primeros pasos en R
+
+## Instalación
+
+Una vez instalado R, se puede comprobar que la instalación es correcta
+ejecutando la siguiente línea de código, que nos imprimirá en pantalla
+el siguiente saludo.
+
+```{r}
+print("Hola mundo!")
+```
+
+El poner delante de las diferentes funciones de R el símbolo `?` nos
+permite obtener la ayuda que R dispone de la función. Puede sernos útil
+en muchas ocasiones.
+
+```{r eval = F}
+?print
+```
+
+### Instalando paquetes
+
+#### CRAN
+
+Es el repositorio oficial de la comunidad de R, y las librerías que
+alberga siguen un proceso de validación antes de quedar publicadas. Si
+marcamos `dependencies = TRUE` se instalarán, además, todos los paquetes
+que necesita la librería deseada. .
+
+```{r eval = F}
+install.packages("tidyverse", dependencies = TRUE)
+```
+
+#### GitHub
+
+GitHub es un repositorio muy conocido de código en general, y también
+alberga librerías de R. Antes de instalar paquetes desde GitHub, se
+necesita instalar la librería `remotes`.
+
+```{r eval = F}
+install.packages("remotes", dependencies = TRUE)
+remotes::install_github("tidyverse")
+```
+
+#### Bioconductor
+
+Bioconductor ofrece *software* estadístico para análisis
+bioinformáticos, como la comparación de secuencias genéticas.
+Igualmente, antes de instalar librerías desde Bioconductor se necesita
+instalar la librería `Biocmanager`.
+
+```{r eval = F}
+    install.packages("BiocManager", dependencies = TRUE)
+    BiocManager::install()
+```
+
+#### Cargar librerías
+
+Tras la instalación, y cada vez que abramos R y necesitemos utilizar una
+librería, cargaremos el paquete de la siguiente manera:
+
+```{r}
+library(tidyverse)
+```
+
+## Importación y exportación de datos
+
+### Utilizando comandos
+
+La importación de archivos en R se puede realizar de manera más directa
+utilizando comandos. Dependiendo del tipo de archivo que queramos
+cargar, se utilizará una función u otra. Cada una de estas funciones,
+como se ha visto en el apartado anterior, tiene un conjunto de
+parámetros configurables que podremos consultar escribiendo
+`?NombreFuncion` en la consola del programa.
+
+```{r eval = F}
+library(readr)
+dataset <- read_excel("RUTA_ARCHIVO") #Si queremos leer un archivo Excel
+dataset <- read.csv("RUTA_ARCHIVO") #Si queremos leer un archivo CSV
+```
+
+En R, los símbolos `<-` equivalen al `=`.
+
+### Datos *online*
+
+Hay algunos conjuntos de datos, generalmente provenientes de
+instituciones públicas, que se pueden descargar directamente desde
+Internet a R. Por ejemplo, vamos a utilizar UCI, que es un repositorio
+de conjuntos de datos para `Machine Learning`. Se pueden encontrar en
+<http://archive.ics.uci.edu/ml/index.php>. En este caso, el carácter que
+separa los valores es un punto y coma, por lo que se lo indicamos.
+
+```{r eval = F}
+dataset <- read.csv("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv", 
+                    sep = ";")
+```
+
+Otro repositorio con un amplio catálogo de datos *online* es Kaggle
+[<https://www.kaggle.com/datasets>] (<https://www.kaggle.com/datasets>).
+Tiene conjuntos de datos de diferentes tipologías y tamaños, e incluso
+propone tareas y competiciones a la comunidad para resolver con ellos.
+Hay que registrarse para poder descargar los datos, generalmente en
+formato *CSV*. Se pueden cargar en R como hemos visto anteriormente.
+
+### Datos precargados
+
+Hay algunas librerías que incluyen conjuntos de datos, además de
+funciones, que se pueden cargar. Con este fin, R precarga la librería
+`datasets`, que contiene un gran número de conjuntos de datos de
+diferentes tipos. Se pueden consultar los *datasets* disponibles en la
+página
+[<https://www.rdocumentation.org/packages/datasets/versions/3.6.2>]
+(<https://www.rdocumentation.org/packages/datasets/versions/3.6.2>).
+Para cargar este tipo de conjuntos de datos almacenados en librerías,
+escribimos `data("NombreDataset")`. Por ejemplo, mediante el siguiente
+comando cargaremos un conjunto de datos del número de arrestos por
+asesinato, asalto y violación por cada 100.000 habitantes de los 50
+estados de Estados Unidos en el año 1973. Ejecutar una carga de datos
+puede tardar un tiempo en llevarse a cabo, dependiendo del tamaño de los
+mismos.
+
+```{r eval = F}
+data("USArrests")
+```
+
+### Exportación
+
+Si realizamos algún cambio en el conjunto de datos, podemos guardar una
+copia en el ordenador mediante los siguientes comandos. `"RUTA_ARCHIVO"`
+será la ruta dónde se almacene el archivo. Por ejemplo, `"./"` lo
+almacenará en el mismo directorio en el que está trabajando R.
+
+```{r eval = F}
+library(xlsx)
+write.xlsx(dataset, "RUTA_ARCHIVO") #Si queremos guardar un archivo Excel
+write.csv(dataset, "RUTA_ARCHIVO") #Si queremos guardar un archivo CSV
+```
+
+Al igual que las funciones de lectura, estas funciones tienen bastantes
+parámetros que se pueden ajustar dependiendo de cómo se quieran
+almacenar los datos. Para aprender más sobre ellos, se puede buscar
+mediante `?write.csv` o `?write.xlsx`.
+
+# Capítulo 3. Análisis exploratorio de datos
+
+## Primer vistazo al conjunto de datos
+
+Procedemos a cargar el archivo de datos, que está en formato csv.
+
+```{r}
+insurance <- read.csv("./Data/insurance.csv")
+```
+
+Una vez cargado, podremos ver las primeras filas del conjunto de la
+siguiente manera:
+
+```{r}
+head(insurance)
+```
+
+También podremos ver con qué tipo de variable ha almacenado R cada
+columna del dataset:
+
+```{r}
+str(insurance)
+```
+
+Podemos obtener un resultado similar con la función `glimpse` de la
+librería `tidyverse`. Además, nos devuelve también el número de filas y
+columnas del conjunto de datos.
+
+```{r}
+glimpse(insurance)
+```
+
+Y, finalmente, podremos obtener un primera descripción estadística de
+las variables:
+
+```{r}
+summary(insurance)
+```
+
+Si nos encargamos de codificar correctamente las variables cualitativas
+con el tipo `factor`, esta función también nos devolverá las frecuencias
+absolutas de este tipo de variables:
+
+```{r}
+insurance$sex = factor(insurance$sex)
+insurance$smoker = factor(insurance$smoker)
+insurance$region = factor(insurance$region)
+
+summary(insurance)
+```
+
+## Crear subconjuntos de datos
+
+### Subconjuntos de variables
+
+Una vez cargada `tidyverse`, podemos seleccionar columnas utilizando la
+función `select`. Por ejemplo, el siguiente código seleccionará las
+variables `age`, `sex` y `region`.
+
+```{r}
+subset <- insurance%>%select(age, sex, region)
+
+head(subset)
+```
+
+### Subconjuntos de registros
+
+Para seleccionar subconjuntos de filas del conjunto de datos, podemos
+utilizar la función `filter`. Por ejemplo, de la siguiente manera
+seleccionamos a las mujeres, utilizando la igualdad (`==`).
+
+```{r}
+subset <- insurance%>%filter(sex == "female")
+
+head(subset)
+```
+
+A continuación, seleccionamos a todos aquellos que no sean de la región
+`southwest`, utilizando la desigualdad (`!=`).
+
+```{r}
+subset <- insurance%>%filter(region != "southwest")
+
+head(subset)
+```
+
+A continuación, seleccionamos a los individuos entre 30 y 60 años.
+
+```{r}
+subset <- insurance%>%filter(age >= 30 & age <=60)
+
+head(subset)
+```
+
+Para seleccionar a los individuos que cumplan una condición u otra,
+utilizamos el símbolo `|`. Por ejemplo, de la siguiente manera
+escogeríamos a los que estén en la region `southwest` o `southeast`.
+
+```{r}
+subset <- insurance%>%
+            filter(region == "southwest" | region == "southeast")
+
+head(subset)
+```
+
+Todos los filtros anteriores se pueden combinar utilizando comas.
+Además, para seleccionar a los individuos que cumplan una condición y
+otra se utiliza el símbolo `&`. Por ejemplo, de la siguiente manera
+seleccionaríamos a las mujeres que tengan entre 30 y 45 años y que
+tengan justamente 2 o 4 hijos.
+
+```{r}
+subset <- insurance%>%filter(sex == "female", age>=30 & age<=45, children == 2 | children == 4)
+
+head(subset)
+```
+
+## El concepto de frecuencia
+
+### Tablas de frecuencia
+
+Para obtener las frecuencias absolutas de una variable cualitativa,
+utilizamos la función `table`.
+
+```{r}
+table(insurance$region)
+```
+
+Hay una función más avanzada, que además nos permite obtener la
+frecuencia relativa y la frecuencia acumulada. Para utilizarla,
+necesitamos instalar la librería `epiDisplay` y cargarla. Esta función,
+además, genera automáticamente un gráfico descriptivo.
+
+```{r}
+library(epiDisplay)
+
+tab1(insurance$region)
+```
+
+La forma de obtener la frecuencia relativa sin esta función, utilizando
+`tidyverse`, puede ser un poco más complicada de ejecutar, pero puede
+venir bien conocerla:
+
+```{r}
+insurance%>%group_by(region)%>%summarize(Frec.Absoluta = n())%>% mutate(Frec.Relativa = Frec.Absoluta/nrow(insurance))
+```
+
+También podemos ordenar el resultado, utilizando la función `arrange`.
+
+```{r}
+insurance%>%group_by(region)%>%summarize(Frec.Absoluta = n())%>%mutate(Frec.Relativa = Frec.Absoluta/nrow(insurance))%>%
+arrange(desc(Frec.Relativa))
+```
+
+### Histogramas
+
+La mayoría de visualizaciones del libro se han hecho utilizando la
+librería `ggpubr`. En los siguientes ejemplos, realiamos histogramas.
+Para ello, indicamos el `dataset` de referencia, y pasamos como
+argumento el nombre de la variable donde se almacena los datos que nos
+interesa.
+
+```{r}
+library(ggpubr)
+gghistogram(insurance, x = "bmi", bins = 10)
+gghistogram(insurance, x = "children")
+```
+
+### Funciones de densidad
+
+De manera similar, podemos obtener gráficos de densidad de la siguiente
+manera:
+
+```{r}
+ggdensity(insurance, x = "bmi")
+ggdensity(insurance, x = "charges")
+```
+
+## Describiendo las distribuciones
+
+### Medidas de posición
+
+A continuación, describimos las medidas de posición más importantes:
+
+-   **Media**
+
+```{r}
+mean(insurance$bmi)
+```
+
+-   **Mediana**
+
+```{r}
+median(insurance$bmi)
+```
+
+-   **Moda** R no tiene implementada una función moda como tal, por lo
+    que la definimos a continuación:
+
+```{r}
+getmode <- function(v){
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+getmode(insurance$region)
+```
+
+-   **Percentiles y cuartiles** Si no especificamos nada, la función
+    `quantile` nos devolverá los percentiles 0, 25, 50, 75 y 100. En
+    cambio, si los especificamos, nos devolverá únicamente estos.
+
+```{r}
+quantile(insurance$bmi)
+
+quantile(insurance$bmi, c(0.15, 0.85))
+```
+
+### Medidas de variabilidad
+
+-   **Rango**
+
+```{r}
+max(insurance$bmi) - min(insurance$bmi)
+
+```
+
+-   **Desviación típica**
+
+```{r}
+sd(insurance$bmi)
+```
+
+-   **Varianza**
+
+```{r}
+sd(insurance$bmi)**2
+```
+
+-   **Intervalo intercuartílico**
+
+```{r}
+IQR(insurance$bmi)
+```
+
+## Visualización de datos
+
+### Gráfico de barras
+
+Se puede encontrar a continuación algunos ejemplos de gráficos de barras
+realizados con `ggpubr`. Se muestra el coste de la póliza según si el
+individuo es fumador o no. En el primero, además, se marcará la media
+por categoría, mientras que en segundo se añade también la desviación
+típica.
+
+```{r}
+
+insurance%>%ggbarplot(x = "smoker", y = "charges", color =
+"smoker", add = "mean")
+
+insurance%>%ggbarplot(x = "smoker", y = "charges", color =
+"smoker", add = "mean_sd")
+
+```
+
+### Boxplot
+
+Los *boxplots* tienen las siguientes características
+
+-   La caja central, que presenta el rango desde $Q_1$ a $Q_3$ o
+    intervalo intercuartílico (IQR).
+-   La mediana, coincidente con el $Q_2$, mostrada como una línea dentro
+    de la caja.
+-   Los bigotes, que cubren la distancia hasta el valor más bajo y más
+    alto, pero sin sobrepasar 1.5 veces el valor de $Q_1$ y $Q_3$,
+    respectivamente. Cualquier punto más allá se considerará un valor
+    atípico.
+-   Valores atípicos, que se dibujan como puntos más allá de los
+    bigotes. No siempre aparecen, pero tampoco tienen que considerarse
+    directamente como valores extremos si existen. Es decir, estos
+    valores no son automáticamente descartados del análisis.
+-   Se puede incorporar, de manera opcional, la media como un punto que
+    generalmente se encontrará dentro de la caja central. De hacerlo,
+    serviría para definir parte de la forma de la distribución de los
+    datos. En concreto, su asimetría.
+
+```{r}
+library(ggpubr)
+ggboxplot(insurance, y = "charges", color = "#00AFBB",
+    title = "charges")
+    
+
+```
+
+Además de los *boxplots*, también tenemos los gráficos de violín, que
+sirven para dilucidar mejor la distribución real de las variables. El
+*boxplot* y el gráfico de violín se pueden combinar como se ve a
+continuación, mediante el parámetro `add`.
+
+```{r}
+ggviolin(insurance, y = "charges", color = "black",
+fill = "#00AFBB", title = "charges", add = "boxplot",
+add.params = list(fill = "white"), xlab = "")
+
+ggboxplot(insurance, y = "charges", x = "smoker", color = "smoker", add = "violin", add.params = list(alpha = 0.4))
+```
+
+### Scatterplot
+
+La librería `ggplot2` nos permite obtener *scatterplot*, o gráficos de
+dispersión, de manera sencilla, como se ve a continuación. La sintaxis
+de `ggplot2` es la siguiente: primero, se genera un gráfico vacio
+indicando el *dataset* de referencia, e indicando con el comando `aes`
+la variable que irá en el eje x y la del eje y. Una vez creado, se le
+dice que añada la geometría de puntos necesaria para crear un gráfico de
+dispersión.
+
+```{r}
+ggplot(insurance, aes(x = age, y = charges))+
+  geom_point()
+    
+ggplot(insurance, aes(x = age, y = bmi))+
+  geom_point()
+```
+
+### Pie chart
+
+El gráfico de tarta o *pie chart* lo crearemos con `ggplot2` como si
+fuera un gráfico de barras, pero después indicándole que las coordenadas
+donde aparecerán las barras deben ser polares, es decir, circulares.
+
+```{r}
+insurance%>%group_by(region)%>%summarize(N = n())%>%
+            ggplot(aes(x="", y=N, fill=region)) +
+                geom_bar(stat="identity", width= 1) +
+                coord_polar("y", start=0)+theme_void()
+```
+
+### Combinar gráficos
+
+Se pueden combinar distintos gráficos mediante la librería `patchwork`.
+Para ello, es necesario asignar cada gráfico a una variable diferente,
+como se ve a continuación.
+
+```{r}
+library(patchwork)
+
+p1 <- ggplot(insurance, aes(x = age, y = charges))+
+  geom_point()
+p2 <- ggplot(insurance, aes(x = age, y = bmi))+
+  geom_point()
+
+p1/p2 + plot_annotation(tag_levels = "A")
+```
+
+### Exportar gráficos
+
+Finalmente, una vez hayamos modificado el gráfico como queramos, lo
+podremos exportar de las siguientes maneras:
+
+-   **ggsave**
+
+Se puede guardar con diferentes extensiones cambiando el `.jpg` por
+`.png` o `.pdf`.
+
+```{r width = 10, height = 5}
+p1/p2 + plot_annotation(tag_levels = "A")
+
+ggsave("./NombreFigura.jpg", width = 10, height = 5,
+            units = "cm") 
+```
+
+-   **r base**
+
+Se puede guardar con diferentes extensiones cambiando el `jpeg()` por
+`png()` o `pdf()`.
+
+```{r}
+jpeg()
+p1/p2 + plot_annotation(tag_levels = "A")
+dev.off()
+```
+
+# Capítulo 4. La distribución normal
+
+## La distribución normal y la distribución normal tipificada
+
+Para generar una distribución normal, se utiliza la función `rnorm`,
+indicándole la cantidad de valores que queremos que tenga nuestra
+distribución. Si no especificamos el valor de la media y la desviación
+que queremos que tenga, creará una distribución normal tipificada, es
+decir, con media 1 y desviación típica 0. Si no, lo hará con la media y
+desviación que le especifiquemos.
+
+```{r}
+distrib_normal_tipif = rnorm(1000) # Distribución normal tipificada de 1000 elementos
+
+distrib_normal = rnorm(1000, mean = 5, sd = 2) # Distribución normal de 1000 elementos
+```
+
+Esta distribución normal tiene, apróximadamente, las especificaciones
+que le hemos dado.
+
+```{r}
+mean(distrib_normal)
+sd(distrib_normal)
+```
+
+Si quisieramos tipificarla, lo podríamos hacer mediante la función
+`scale`:
+
+```{r}
+distrib_normal_tipif <- scale(distrib_normal)
+
+mean(distrib_normal_tipif)
+sd(distrib_normal_tipif)
+```
+
+Como se podía esperar, la nueva media es prácticamente 0, y la
+desviación típica es 1.
+
+El siguiente código permite obtener la Figura 4.1, dibujando la
+distribución real de una variable, y la que tendría una distribución
+normal con sus mismos parámetros. Primero, crearemos un `data.frame`
+temporal con la información de la distribución normal (`rnorm`) que
+hemos creado con los parámetros de la real (`insurance$bmi`). Primero
+crearemos un `ggplot` con los datos reales. A este le incorporaremos el
+histograma y la línea de densidad, índicandole en el `aes` que en la
+leyenda queremos que aparezca ese color asociado a la distribución real.
+Después de unos parámetros de estilo relacionados con el tema de
+visualización, añadimos una nueva línea de densidad con los datos del
+`data.frame` temporal, y asociamos ese nuevo color a la distribución
+ideal. Finalmente, ponemos el título de la gráfica.
+
+```{r fig.width=10}
+temp = data.frame(x = rnorm(nrow(insurance), mean = mean(insurance$bmi), sd = sd(insurance$bmi)))
+
+ggplot(insurance, aes(x = bmi))+
+  geom_histogram(aes(y =stat(density)), color="#e9ecef")+ 
+  geom_line(stat = "density", aes(col = "Distribución real"), lwd = 2)+
+  theme_classic()+
+  theme(legend.title = element_blank())+
+  geom_line(aes(x = temp$x, col = "Distribución ideal"), stat = "density", lwd = 2, linetype = 4) + 
+  ggtitle("Distribución de BMI")
+
+```
+
+## Análisis de normalidad
+
+A continuación, creamos una variable normal que hará referencia al
+número de horas sentadas que pasa cada persona. La media será de 8
+horas, y la desviación típica de 2. Esta variable ha de tener tantos
+valores como número de personas hay en el conjunto de datos.
+
+```{r}
+numeroPersonas = nrow(insurance)
+insurance$SittingHours = rnorm(numeroPersonas, mean = 8, sd = 2)
+```
+
+### QQ-plot
+
+El qq-plot es un gráfico que nos permite estudiar la normalidad de una
+variable de manera gráfica. Para generar la Figura 4.3 del libro, lo
+hacemos con el siguiente código. La función `qqline` necesita dos
+parámetros básicos: una distribución normal tipificada y la variable
+real.
+
+```{r fig.width = 8}
+par(mfrow = c(1, 2)) # Para que aparezcan uno al lado del otro
+qqnorm(insurance$SittingHours)
+qqline(insurance$SittingHours, col = 2)
+
+qqnorm(insurance$age)
+qqline(insurance$age, col = 2)
+
+par(mfcol = c(1, 1))
+```
+
+## Otras distribuciones
+
+### Distribuciones discretas
+
+**Binomial**
+
+La función `dbinom` nos permite generar una distribución binomial. El
+primer parámetro que introduciremos (`x`) será el número de éxitos que
+queremos tener, el siguiente (`size`) es el número de intentos que
+realizaremos, y el tercero (`prob`) será la probabilidad de éxito de
+cada intento. Por ejemplo, la probabilidad de obtener 2 caras tirando 6
+veces una moneda es la siguiente:
+
+```{r}
+dbinom(2, 6, 0.5)
+```
+
+Para generar la Figura 4.4 se necesita calcular las probabilidades
+asociadas a varios números de éxitos. Por ejemplo, calculamos entre 1 y
+100 éxitos (`1:100`), suponiendo que hacemos 100 tiradas.
+
+```{r}
+plot(dbinom(1:100, size = 100, prob = 0.5), type = "h", lwd = 2,
+     main = "Función de probabilidad - Distribución binomial",
+     ylab = "P(X = x)", xlab = "Número de éxitos")
+```
+
+-   **Poisson**
+
+En el caso de la Poisson (`dpois`), necesitaremos dos hiperparámetros:
+el número de ocurrencias que queremos observar (`x`) y el número medio
+de ocurrencias en el tiempo de estudio (`lambda`). Por ejemplo, si
+queremos estudiar la probabilidad de tener 10 fallos durante una hora en
+una cadena de montaje, teniendo en cuenta que se suelen producir unos 25
+fallos a la hora.
+
+```{r}
+dpois(10, 25)
+```
+
+Como se ve, la probabilidad de que ocurran 10 fallos en una hora, cuando
+lo normal es que ocurran 25, es muy baja.
+
+El siguiente código nos permitirá obtener la Figura 4.5. Como se ve en
+la misma, lo más probable es que ocurran los 25 que se esperan.
+
+```{r}
+plot(dpois(1:10, lambda = 0.01), type = "h", lwd = 2,
+     main = "Función de probabilidad - Distribución Poisson",
+     ylab = "P(X = x)", xlab = "Número de ocurrencias")
+```
+
+### Distribuciones continuas
+
+-   **Exponencial**
+
+Para una distribución exponencial (`dexp`), también necesitaremos dos
+parámetros: el tiempo a analizar (`x`) y el parámetro lambda de la
+distribución de Poisson (`rate`). Por ejemplo, si queremos estimar la
+probabilidad de que el primer fallo en la cadena de montaje (λ = 25)
+ocurra a la media hora, la probabilidad será pequeña.
+
+```{r}
+dexp(0.5, 25)
+```
+
+La Figura 4.6 se puede obtener con el siguiente código. Generaremos una
+secuencia de tiempos entre 0 y 8, separados por 0.1 unidades de tiempo.
+Genearemos la distribución con la lambda igual a 2, y añadiremos una
+línea adicional con la lambda igual a 1.
+
+```{r}
+x <- seq(0, 8, 0.1)
+
+
+plot(x, dexp(x, 2), type = "l", ylab = "", lwd = 2, col = "red")# lambda = 2
+lines(x, dexp(x, rate = 1), col = "blue", lty = 1, lwd = 2)# lambda = 1
+legend("topright", 
+       c(expression(lambda), "2", "1"), 
+       lty = c(0, 1, 1), 
+       col = c("blue", "red"), 
+       box.lty = 1, lwd = 2)  # Añadimos la leyenda
+```
+
+-   **t de Student**
+
+En el caso de la distribución t-Student, los valores dependerán de los
+grados de libertad (gl, o `df`) que se le de. El siguiente código
+permite obtener la Figura 4.7.
+
+```{r}
+tStudent <- dt(seq(- 10, 10, by = 0.01), df = 3)
+tStudent10 <- dt(seq(- 10, 10, by = 0.01), df = 10)
+norm <- dnorm(seq(-10, 10, 0.01))
+
+plot(seq(-10, 10, 0.01), dnorm(seq(-10, 10, 0.01)), type = "l", col = "red",lty = 1, lwd = 2, xlab = "", ylab = "")
+lines(seq(-10, 10, 0.01), tStudent, col = "blue", type = "l",lty = 1, lwd = 2)
+lines(seq(-10, 10, 0.01), tStudent10, col = "green", type = "l",lty = 1, lwd = 2)
+legend("topright", legend = c("Normal", "t-Student, gl = 3", "t-Student, gl = 10"), col = c("red", "blue", "green"),lty = 1, lwd = 2)
+```
+
+-   **Chi-cuadrado**
+
+De manera similar a la anterior, esta distribución varia con los grados
+de libertad que se le de. Para obtener la Figura 4.8, utilizamos el
+siguiente código.
+
+```{r}
+x <- seq(0, 20, 0.1)
+
+plot(x, dchisq(x, df = 5), type = "l", ylab = "", lwd = 2, col = "red")
+lines(x, dchisq(x, df = 10), col = "blue", lty = 1, lwd = 2)
+legend("topright", c("Grados de libertad", "10", "5"), lty = c(0, 1.5, 1), col = c("blue", "red"), box.lty = 1, lwd = 2)
+```
+
+# Capítulo 5. Contraste de hipótesis
+
+Este capítulo del libro es básicamente teórico, por lo que pondremos
+todo el código relacionado con los contrastes de hipótesis en el
+siguiente capítulo.
+
+## Tamaño de efecto, poder estadístico y tamaño de muestra
+
+El tamaño de efecto y el poder estadístico son dos conceptos que se
+explican en el libro y que necesitaremos comprender para hacer el
+cálculo del tamaño muestral, por lo que se recomienda la lectura de la
+sección 5.10 de este capítulo. A continuación, ponemos algunos ejemplos
+de código para realizar el cálculo del tamaño muestral. Recomendamos la
+lectura de la web [<https://www.statmethods.net/stats/power.html>],
+donde aparecen la mayoría de posibilidades para realizar estos cálculos
+en R, pues la función que necesitaremos para el cálculo dependerá del
+tipo de contraste de hipótesis que queramos hacer en nuestro estudio.
+Todas estas funciones están dentro de la librería `pwr`, que deberemos
+instalar previamente.
+
+Por ejemplo, para calcular el tamaño muestral necesario para realizar un
+t-test con un tamaño de efecto pequeño ($`d = 0.2`$), un poder
+estadístico alto ($\beta = 0.8$) y un nivel de significatividad estándar
+($\alfa = 0.05$), utilizaríamos el siguiente código:
+
+```{r}
+library(pwr)
+pwr.t.test(d = 0.2, sig.level = 0.05, power = 0.8)
+```
+
+Esta función nos indica que necesitaríamos al menos 394 muestras en cada
+grupo. En cambio, si las diferencias que esperamos encontrar entre los
+dos grupos son más grandes ($d = 0.8$), sólo necesitaríamos 26 muestras
+en cada grupo.
+
+```{r}
+pwr.t.test(d = 0.8, sig.level = 0.05, power = 0.8)
+```
+
+Si en vez de un t-test quisieramos hacer un ANOVA utilizaríamos la
+función `pwr.anova.test`. En ella hemos de indicar todas menos una de
+las siguientes variables: el número de grupos (`k`), el número de
+muestras por grupo (`n`), el tamaño de efecto (`f`), el nivel de
+significatividad (`sig.level`) o el poder estadístico (`power`). Por
+ejemplo, si tenemos un contraste de 5 grupos, en el que queremos tener
+un tamaño de efecto pequeño, un nivel de significatividad estándar y un
+buen poder estadístico, necesitariamos al menos 61 muestras en cada uno
+de los 5 grupos.
+
+```{r}
+pwr.anova.test(k = 5, f = 0.2, sig.level = 0.05, power = 0.8)
+```
+
+# Capítulo 6. Tests estadísticos
+
+## Contrastes de una variable
+
+### Contrastes para una proporción
+
+Para calcular si la proporción de mujeres de nuestros datos es
+apróximadamente de 0.5, necesitamos utilizar el `prop.test`, indicándole
+el número de mujeres, el número total de individuos, y la proporción que
+queremos comprobar.
+
+```{r}
+n_mujeres <- sum(insurance$sex == "female")
+n_total <- nrow(insurance)
+prop.test(n_mujeres, n_total, p = 0.5)
+```
+
+En este caso, el p-valor del test es de 0.72, lo cual nos indica que es
+muy probable que encontremos una proporción de mujeres de 0.5 y que, por
+lo tanto, no podamos rechazar la hipótesis nula. El intervalo de
+confianza nos revela que la proporción real de mujeres en la población
+se encontrará en el intervalo $p_{mujeres` \in [0.4677, 0.5219]$. Para
+calcular el tamaño de efecto asociado al test, necesitaremos instalar la
+librería `effectsize` y utilizar el siguiente código, en el cual le
+indicamos a la función las frecuencias absolutas de cada sexo y las que
+queremos contrastar
+
+```{r}
+library(effectsize)
+pearsons_c(table(insurance$sex), p = c(0.5, 0.5))
+```
+
+Es un tamaño de efecto pequeño.
+
+### Contraste para una media
+
+Queremos estudiar si la media de horas que pasan los individuos sentados
+es de 5.5 horas. En las variables numéricas necesitamos comprobar si se
+distribuyen normalmente o no, para aplicar tests paramétricos o no
+paramétricos. Para ello podemos utilizar el `shapiro.test` en la mayoría
+de ocasiones.
+
+```{r}
+shapiro.test(insurance$SittingHours)
+```
+
+Como esta variable es normal (p-valor \> 0.05), procedemos a hacer un
+t-test tal y como se ve a continuación. Utilizamos el parámetro `mu`
+para indicar el valor de la media que nosotros queremos contrastar.
+
+```{r}
+t.test(insurance$SittingHours, mu = 5.5)
+```
+
+Como el p-valor es muy pequeño, descartamos esta hipótesis. Si
+quisiéramos conocer el tamaño de efecto, utilizaríamos la función
+`cohens_d` de la librería `effectsize`.
+
+```{r}
+cohens_d(x = "SittingHours", y = 5.5, data = insurance)
+```
+
+Es un tamaño de efecto grande.
+
+### Contraste para una varianza
+
+Para poder realizar este contraste, la variable ha de seguir una
+distribución normal. En este caso vamos a plantear un test unilateral
+para comprobar si la varianza de la variable `SittingHours` es mayor que
+4. Para ello necesitamos la función `sigma.test` del paquete
+`TeachingDemos`, en la que especificamos que la alternativa es "mayor
+que".
+
+```{r}
+TeachingDemos::sigma.test(insurance$SittingHours, sigma = 4, alternative = "greater")
+```
+
+## Contraste para proporciones de más de una variable
+
+### Test de independencia Chi-cuadrado
+
+Para realizar este test utilizamos los datos de los pasajeros del
+Titanic que están disponibles para descargar en Kaggle
+(<https://www.kaggle.com/competitions/titanic/>). Queremos comprobar si
+hay una relación entre la clase en la que viajaba cada uno (`Pclass`) y
+si sobrevivieron o no ( `Survived`).
+
+```{r}
+data = read.csv("train.csv")
+supervivencia = data$Survived
+clase = data$Pclass
+chisq.test(supervivencia, clase)
+```
+
+Se puede decir que hay una dependencia entre la supervivencia y la clase
+en la que viajaban. El tamaño de efecto asociado a este test se calcula
+con `cramers_v` de `effectsize`, tal y como se ve a continuación:
+
+```{r}
+library(effectsize)
+cramers_v(supervivencia, clase)
+```
+
+Finalmente, si quisieramos visualizar la distribución de la
+supervivencia por clase, R ofrece la función `mosaicplot` para ello. El
+parametro `shade = T` permite colorear los diferentes rectángulos según
+la diferencia entre la frecuencia esperada (en el caso de que la
+supervivencia no dependiera de la clase) y la observada en la realidad.
+El color azul implica tener una mayor frecuencia observada que esperada,
+es decir, que es un hecho que ocurre más de lo que debería. El color
+rojo, por otro lado, expresa una diferencia negativa entre la frecuencia
+esperada y la observada, por lo que marcará combinaciones de condiciones
+que ocurren menos de lo esperado.Se utiliza de la siguiente manera:
+
+```{r}
+Titanic = table(clase, supervivencia)
+mosaicplot(Titanic, shade = T)
+```
+
+Hay más personas de lo esperable de tercera clase que no sobrevivieron,
+mientras que más personas de primera clase de las esperables sí lo
+hicieron.
+
+### Test McNemar
+
+El test McNemar es también un contraste de proporciones, pero se utiliza
+cuando tenemos dos muestras provenientes del mismo individuo u origen en
+momentos temporales diferentes. Por ejemplo, vamos a comparar las
+opiniones de los clientes de un supermercado tras el cambio de ubicación
+de los productos. Para ello, generaremos un pequeño conjunto de datos
+donde se tiene la respuesta de 50 personas a la pregunta *¿Le resulta
+fácil encontrar los productos que desea adquirir durante su compra?* en
+el estado inicial de un supermercado y tras el cambio de ubicación de
+los productos.
+
+```{r}
+set.seed(13)
+data <- data.frame(IDComprador = 1:50, 
+                   RespuestaAntes = sample(c("Sí", "No", "No"), size = 50, replace = T),
+                   RespuestaDespues = sample(c("Sí", "Sí","No"), size = 50, replace = T))
+
+
+table(x = data$RespuestaAntes, y = data$RespuestaDespues, dnn = c("Antes", "Después"))
+```
+
+Realizamos el test de la siguiente manera. La función asume que las
+observaciones están apareadas, es decir, que el primer valor de la
+columna `RespuestaAntes` y el primer valor de `RespuestaDespues`
+provienen de la misma persona.
+
+```{r}
+mcnemar.test(x = data$RespuestaAntes, y = data$RespuestaDespues)
+```
+
+En efecto, hay una diferencia significativa tras el cambio de ubicación.
+El tamaño de efecto asociado al test es mediano, como se comprueba a
+continuación.
+
+```{r}
+library(effectsize)
+cohens_g(x = data$RespuestaAntes, y = data$RespuestaDespues)
+```
+
+## Contraste para medias: test de una variable y dos condiciones
+
+### t-test
+
+Como ejemplo de utilización de este test se va a estudiar si existe
+diferencia estadística en el peso (`weight`) debido al sexo en un grupo
+de personas que consta de 20 mujeres y 20 hombres. Para ello
+utilizaremos el conjunto de datos de `genderweight` del paquete
+`datarium`. Antes de realizar el test tenemos que comprobar que se
+cumplen los requisitos necesarios para hacerlo. Primero, que el peso
+(`weight`) se distribuye normalmente en los dos grupos que definimos.
+Una vez confirmado, se verifica la homocedasticidad de la variable,
+también por grupos. Finalmente ejecutamos el test.
+
+```{r}
+data("genderweight", package = "datarium")
+pesoHombres <- genderweight%>%filter(group == "M")%>%dplyr::select(weight)%>%unlist()
+shapiro.test(pesoHombres)
+```
+
+```{r}
+pesoMujeres <- genderweight%>%filter(group == "F")%>%dplyr::select(weight)%>%unlist()
+shapiro.test(pesoMujeres)
+```
+
+Tanto el peso de las mujeres como el de los hombres se distribuye
+normalmente.
+
+```{r}
+rstatix::levene_test(lm(weight ~ group, data = genderweight))
+```
+
+El p-valor del test de homocedasticidad es menor a 0.05, por lo que se
+rechaza la hipótesis de homocedasticidad. Sin embargo, la función en R
+que realiza el t-test no obliga a que se cumpla esta condición, ya que
+implementa la versión de Welch que considera varianzas diferentes para
+los diferentes grupos. Si la cumpliera, se podría especificar añadiendo
+el parámetro `var.equal = TRUE` al llamar a la función.
+
+```{r}
+t.test(x = pesoHombres, y = pesoMujeres)
+```
+
+En efecto, hay una diferencia estadísticamente significativa entre los
+hombres y las mujeres. Para conocer el tamaño de efecto, lo calculamos
+de la siguiente manera:
+
+```{r}
+library(effectsize)
+cohens_d(x = "weight", y = "group", data = genderweight)
+```
+
+Aunque el valor que se obtiene es negativo, se ha de tomar el valor
+absoluto del mismo, por lo que la d de Cohen es de 6.58 y el tamaño de
+efecto asociado al p-valor obtenido es grande.
+
+### t-test pareado
+
+Como en el caso del McNemar, si tenemos muestras pareadas necesitaremos
+hacer un t-test especial. Vamos a utilizar el mismo ejemplo que con el
+test McNemar, pero ahora los clientes contestarán con una escala
+numérica a la pregunta *Puntúe del 1 al 10 la facilidad con la que
+encuentra los productos durante su compra*. En este caso, la hipótesis
+nula, que siempre se enuncia desde el punto de vista más conservador,
+sería que los clientes no han variado de opinión tras el cambio de
+ubicación de los productos. La alternativa, mientras tanto, defendería
+que sí se ha producido un cambio en su opinión.
+
+Simulamos los datos para que sean normales, como se ve a continuación.
+
+```{r}
+set.seed(13)
+numerosAleatorios = round(rnorm(50, mean = 5, sd = 3),1)
+numerosAleatorios2 = round(rnorm(50, mean = 5, sd = 3),1)
+data <- data.frame(IDComprador = 1:50, 
+                   RespuestaAntes = numerosAleatorios,
+                   RespuestaDespues = numerosAleatorios2)
+```
+
+Hacemos el t-test indicando que las muestras son pareadas
+(`paired = TRUE`). La función asume que las observaciones están
+apareadas, es decir, que el primer valor de la columna `RespuestaAntes`
+y el primer valor de `RespuestaDespues` provienen de la misma persona.
+
+```{r}
+t.test(x = data$RespuestaAntes, 
+       y = data$RespuestaDespues, 
+       paired = T)
+```
+
+El test no sale significativo, pero si quisiéramos calcular el tamaño de
+efecto, lo podríamos hacer como hemos visto en el caso del t-test, pero
+también indicando que las muestras son pareadas (`paired = TRUE`).
+
+```{r}
+library(effectsize)
+cohens_d(x = "RespuestaAntes", y = "RespuestaDespues", data = data, paired = TRUE)
+```
+
+### Wilcoxon-Mann-Whitney
+
+Este test es la versión no paramétrica del t-test. Utilizamos el ejemplo
+del capítulo 5.9 a continuación, para comprobar si las mujeres pagan lo
+mismo que los hombres.
+
+```{r}
+costesMujeres = insurance$charges[insurance$sex == "female"]
+costesHombres = insurance$charges[insurance$sex == "male"]
+wilcox.test(costesMujeres,
+            costesHombres, 
+            conf.int = T)
+```
+
+No hay diferencias significativas, por lo que no se puede decir que el
+coste de la póliza dependa del sexo. Si hubieran aparecido diferencias
+significativas, el tamaño de efecto asociado se podría calcular de la
+siguiente manera:
+
+```{r}
+library(effectsize)
+rank_biserial(x = "charges", y = "sex", data = insurance)
+```
+
+### Wilcoxon signed rank test
+
+Este es el test para muestras no paramétricas pareadas. Vamos a utilizar
+el mismo caso que para el t-test pareado, pero esta vez sin forzar a que
+las respuestas dadas sean paramétricas. Igualmente, comprobamos la
+normalidad de las dos respuestas con el `shapiro.test`, que nos confirma
+que no son normales.
+
+```{r}
+numerosAleatorios =  sample(1:10, size = 50, replace = T)
+numerosAleatorios2 =  sample(1:10, size = 50, replace = T)
+data <- data.frame(IDComprador = 1:50, 
+                   RespuestaAntes = numerosAleatorios,
+                   RespuestaDespues = numerosAleatorios2)
+
+shapiro.test(data$RespuestaAntes)
+shapiro.test(data$RespuestaDespues)
+```
+
+Hacemos el test indicando que las muestras son pareadas
+(`paired = TRUE`). La función asume que las observaciones están
+apareadas, es decir, que el primer valor de la columna `RespuestaAntes`
+y el primer valor de `RespuestaDespues` provienen de la misma persona.
+
+```{r}
+wilcox.test(x = data$RespuestaAntes, y = data$RespuestaDespues, paired = T)
+```
+
+El test no sale significativo, pero si quisiéramos calcular el tamaño de
+efecto, lo podríamos hacer como hemos visto en el caso del test de
+Wilcoxon previo, pero también indicando que las muestras son pareadas
+(`paired = TRUE`).
+
+```{r}
+library(effectsize)
+rank_biserial(x = "RespuestaAntes", y = "RespuestaDespues", data = data, paired = TRUE)
+```
+
+## Contraste para medias: test de una variable con más de dos condiciones
+
+A continuación se muestra el código necesario para generar la Figura
+6.2, para continuar dando ejemplos de visualizaciones de datos más
+avanzadas con `ggplot2` y combinación de gráficas con `patchwork`.
+
+```{r}
+#Primero creamos los datos artificales de 3 grupos, forzándolos a que sean distribuciones normales idénticas. La función gather reordena el data.frame en dos columnas: Grupo y Valor.
+temp = data.frame(Grupo1 = rnorm(1000, mean = 5, sd = 3), 
+                  Grupo2 = rnorm(1000, mean = 5, sd = 3), 
+                  Grupo3 = rnorm(1000, mean = 5, sd = 3))%>%
+  tidyr::gather(key = "Grupo", value = "Valor") 
+
+# Creamos un plot con la distribución general de los 3 grupos.
+p1 <- ggplot(temp, aes(y = Valor, x = "All")) + 
+        geom_violin(width=1.4)+ 
+        geom_boxplot(width=0.1, color="grey") +
+        xlab("")+
+        theme_classic()+ 
+        theme(legend.position = "none")
+# Creamos un plot que muestre la distribución de cada grupo por separado.
+p2 <- ggplot(temp, aes(x = Grupo, y = Valor, fill = Grupo)) + 
+        geom_violin(width=1.4, alpha = 0.8)+ 
+        geom_boxplot(width=0.1, color="grey", alpha=0.8) +
+        viridis::scale_fill_viridis(discrete = TRUE) +
+        theme_classic()+ 
+        theme(legend.position = "none")
+
+# Creamos los datos artificales de 3 grupos, forzándolos a que sean distribuciones normales pero con diferentes parámetros. La función gather reordena el data.frame en dos columnas: Grupo y Valor. 
+
+temp = data.frame(Grupo1 = rnorm(1000, mean = 5, sd = 3), 
+                  Grupo2 = rnorm(1000, mean = 10, sd = 3), 
+                  Grupo3 = rnorm(1000, mean = 15, sd = 3))%>%
+  tidyr::gather(key = "Grupo", value = "Valor")
+# Creamos un plot con la distribución general de los 3 grupos.
+p3 <- ggplot(temp, aes(y = Valor, x = "All")) + 
+  geom_violin(width=1.4)+ 
+  geom_boxplot(width=0.1, color="grey") +
+  xlab("")+
+  theme_classic()+ 
+  theme(legend.position = "none")
+# Creamos un plot que muestre la distribución de cada grupo por separado.
+p4 <- ggplot(temp, aes(x = Grupo, y = Valor, fill = Grupo)) + 
+  geom_violin(width=1.4, alpha = 0.8)+ 
+  geom_boxplot(width=0.1, color="grey", alpha=0.8) +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme_classic()+ 
+  theme(legend.position = "none")
+
+(p1 + p2+ plot_layout(widths = c(1,2))) / (p3+p4+ plot_layout(widths = c(1,2)))+ plot_annotation(tag_levels = "A")
+
+```
+
+### ANOVA
+
+Para ejemplificar el uso del test ANOVA se va a comprobar si hay
+diferencias en el peso de plantas a las que se le han aplicado
+diferentes tratamientos, teniendo un grupo de control y dos tratamientos
+diferentes. La hipótesis nula sería que el tratamiento no influye y que,
+por lo tanto, el peso de las plantas es el mismo en todos los grupos. La
+hipótesis alternativa indica que el tratamiento sí tiene alguna
+influencia, por lo que el peso medio de las plantas de al menos un grupo
+será diferente al de los demás. Una vez cargados los datos, haremos una
+visualización sencilla para entender la distribución de los datos.
+También ponemos el código de una visualización más avanzada, similar a
+la anterior.
+
+```{r}
+data("PlantGrowth")
+ggpubr::ggboxplot(PlantGrowth, x = "group", y = "weight", col = "group")
+```
+
+```{r}
+p2 <- ggplot(PlantGrowth, aes(x = group, y = weight, fill = group)) + 
+  geom_violin(width=1.4)+ 
+  geom_boxplot(width=0.1, color="grey", alpha=0.8) +
+  viridis::scale_fill_viridis(discrete = TRUE) +
+  theme_classic()+ 
+  theme(legend.position = "none")
+p1 <- ggplot(PlantGrowth, aes(y = weight, x = "All")) + 
+  geom_violin(width=1.4)+ 
+  geom_boxplot(width=0.1, color="grey") +
+  xlab("")+
+  theme_classic()+ 
+  theme(legend.position = "none")
+
+p1 + p2 + plot_layout(widths = c(1,2))+plot_annotation(tag_levels = "A")
+```
+
+Vamos a comprobar la serie de requisitos que necesita el ANOVA. El
+primero es que la variable numérica se ha de distribuir normalmente en
+los diferentes grupos.
+
+```{r}
+PlantGrowth%>%group_by(group)%>%rstatix::shapiro_test(weight)
+```
+
+Una vez comprobada la normalidad, comprobaremos la homocedasticidad.
+
+```{r}
+rstatix::levene_test(lm(weight ~ group, data = PlantGrowth))
+```
+
+Comprobadas estas dos condiciones ya podemos hacer el ANOVA, tal y como
+se muestra a continuación.
+
+```{r}
+anova(lm(weight ~ group, data = PlantGrowth))
+```
+
+El test nos indica que sí hay diferencias estadísticamente
+significativas en el peso entre los diferentes grupos. Podemos comprobar
+el tamaño de efecto asociado de la siguiente manera:
+
+```{r}
+library(effectsize)
+eta_squared(lm(weight ~ group, data = PlantGrowth))
+```
+
+Como se puede ver, el tamaño de efecto asociado es grande, pero podría
+variar entre mediano y grande de acuerdo al intervalo de confianza.
+
+### Comparación múltiple: análisis post hoc
+
+Al realizar un ANOVA podemos encontrar que efectivamente hay diferencias
+significativas en el análisis general, es decir, hay diferencias en al
+menos dos de las tres (o más) medias de las condiciones estudiadas. Sin
+embargo, únicamente con este test no podemos saber qué pares de
+condiciones presentan diferencias. Para identificarlas se realizan los
+análisis post hoc. Hay diferentes tipos de análisis post hoc.
+
+-   **LSD de Fisher** 
+
+Los intervalos LSD de Fisher se pueden obtener en R con la función `LSD.test()` del paquete `agricolae`, de la siguiente manera:
+    
+```{r}
+fit <- aov(weight ~ group, data = PlantGrowth)
+library(agricolae)
+lsdtest <- LSD.test(fit, "group", console = T, group = F)
+```
+
+La función nos está indicando mediante los p-valores que hay diferencias significativas entre el peso medio del grupo de plantas que recibe el tratamiento 2 (\lstinline{trt2}) y el del grupo que recibe el tratamiento 1 (\lstinline{trt1}), sin embargo no las hay entre cada tratamiento y el control. En la salida de la función también podemos ver el valor de la diferencia y los intervalos LSD asociados a esta diferencia.
+
+* **Bonferroni**
+
+La corrección de Bonferroni propone un método donde se realizan los t-test entre todos los pares de grupos, pero disminuyendo el nivel de significación. Para ello está la función `pairwise.t.test`.
+
+```{r}
+pairwise.t.test(PlantGrowth$weight, PlantGrowth$group, p.adjust.method="bonferroni")
+```
+En este caso, la corrección de Bonferroni concluye lo mismo que la prueba de los intervalos LSD de Fisher, indicándonos que el único par de grupos con diferencias estadísticamente significativas es el de tratamiento 1 frente el tratamiento 2, con un p-valor de 0.013.
+
+* **Tukey-Kramer**
+
+El ajuste de Tukey-Kramer es un método de corrección menos conservador que Bonferroni, y es el más adecuado cuando se realizan más de 6 comparaciones, siempre que los grupos tengan el mismo número aproximado de observaciones.
+
+```{r}
+TukeyHSD(aov(weight ~ group, data = PlantGrowth), conf.level=.95) 
+```
+
+Esta función de R nos devuelve la diferencia de peso medio entre los grupos junto al intervalo de confianza del 95% y el p-valor relacionado. Como en los casos anteriores, las diferencias se encuentran entre los grupos de tratamiento 1 y 2, pero en las otras dos comparaciones no son significativas.
+
+### ANOVA de medidas repetidas
+
+Cuando queremos analizar tres o más condiciones de un único factor, pero las muestras son dependientes, por ejemplo, al haber sido  recopiladas empleando los mismos sujetos, necesitamos aplicar un test específico de manera similar a cuando usamos t-test para muestras pareadas. Para ejemplificar el uso del ANOVA de medidas repetidas, vamos a investigar la autoestima en un grupo de 10 personas que se sometió a una dieta y al que se le preguntó en tres momentos distintos tras el inicio de la misma. Hay que aplicarle una ligera transformación para poder trabajar con él, utilizando la función `gather`. Tras realizarla, se puede apreciar que el dataset termina teniendo una fila por cada observación por persona. Mostraremos las observaciones de las 3 primeras personas como ejemplo.
+
+```{r}
+data("selfesteem", package = "datarium")
+selfesteem <- selfesteem %>% gather(key = "time", value = "score", t1, t2, t3)
+selfesteem%>%filter(id %in% c(1:3))
+```
+
+Antes de realizar el test, comprobaremos la normalidad de la variable utilizando el test de Shapiro, como se ha hecho anteriormente.
+
+```{r}
+selfesteem%>%group_by(time)%>%rstatix::shapiro_test(score)
+```
+
+La variable que recoge la puntuación de autoestima es normal en los tres momentos temporales, por lo que solo faltaría estudiar la homocedasticidad. La función de ANOVA del paquete de `rstatix` realiza simultáneamente el test ANOVA y el test de esfericidad, por tanto optaremos por ella.
+
+```{r}
+library(rstatix)
+anova_test(data = selfesteem, dv = score, wid = id, within = time)
+```
+En cuanto al test de Mauchly, cuya hipótesis nula es la homocedasticidad, nos indica que no podemos descartarla, por lo que al cumplir la normalidad y la homocedasticidad, los resultados del test ANOVA son válidos. El p-valor del test ANOVA es menor a 0.05, luego podemos descartar la hipótesis nula de que la autoestima de las personas no varía con el tiempo. Si quisieramos hacer un test post hoc de un ANOVA de medidas repetidas, necesitaremos tener instalada y cargada la librería `emmeans`, y el procedimiento será el siguiente:
+
+```{r}
+library(emmeans)
+modelo <- aov(score~time + Error(id), data = selfesteem)
+temp <- emmeans(modelo, ~time)
+pairs(temp)
+```
+
+Finalmente, el tamaño de efecto se puede estimar igual que en el ANOVA de muestras independientes, pasándole el modelo creado en esta ocasión.
+
+```{r}
+library(effectsize)
+effectsize::eta_squared(modelo)
+```
+
+En este caso, podemos ver como el tamaño de efecto es grande.
+
+### Kruskal-Wallis
+El test de Kruskal-Wallis se utiliza como versión no paramétrica del ANOVA de datos independientes. Es decir, cuando la variable no se distribuye normalmente. Para ejemplificarlo, se va a estudiar si hay un efecto de la región en el coste de la póliza. Primero, comprobamos la distribución del coste de la póliza por región.
+
+```{r}
+insurance%>%group_by(region)%>%shapiro_test(charges)
+```
+
+No se distribuye normalmente en ninguna región. Procedemos a hacer el test:
+
+```{r}
+coste = insurance$charges
+region = insurance$region
+kruskal.test(coste, region)
+```
+
+De manera similar, se puede hacer un análisis post hoc en los tests Kruskal-Wallis. En este caso hacemos el bonferroni, con `pairwise.wilcox.test`.
+
+```{r}
+pairwise.wilcox.test(x = coste, g = region, p.adjust.method = "bonferroni")
+```
+
+Puesto que el test no es significativo al no haberse encontrado diferencias entre las medias, no tiene sentido analizar el tamaño de dicho efecto. Sin embargo, procedemos a calcularlo por motivos formativos.
+
+```{r}
+library(effectsize)
+rank_epsilon_squared(x = "charges", groups = "region", data = insurance)
+```
+
+Como se puede ver, el tamaño de efecto asociado es pequeño.
+
+### Friedman
+
+El test de Friedman se utiliza como versión no paramétrica del ANOVA de medidas repetidas. En esta ocasión, vamos a generar los datos de los resultados de exámenes de distintas asignaturas para cinco alumnos diferentes. La hipótesis nula es que no hay diferencia en las calificaciones entre las distintas asignaturas, mientras que la hipótesis alternativa será que sí la hay.
+
+```{r}
+listaAsignaturas = c("math", "sciences", "english", "arts")
+data <- data.frame(student = rep(1:5, each=4),
+               subject = rep(listaAsignaturas, times=5),
+               score = c(10, 7.5, 5, 5, 6, 7, 7, 9.5, 4, 4.5,
+                        5, 8, 8, 7.5, 8, 6.5, 6.5, 7.5, 6, 8))
+```
+
+```{r}
+friedman.test(y=data$score, groups=data$subject, 
+              blocks=data$student)
+```
+
+El p-valor nos indica que no hay suficiente evidencia estadística como para rechazar la hipótesis de que las calificaciones son diferentes entre las asignaturas. Si queremos realizar un análisis post hoc, lo podríamos hacer mediante las funciones `frdAllPairs...` de la librería `PMCMRplus`, de la siguiente manera:
+
+```{r}
+library(PMCMRplus)
+frdAllPairsExactTest(y = data$score, #variable dependiente
+                 groups = data$subject, #variable donde están los grupos
+                 blocks = data$student #variable donde está el id 
+                 )
+```
+
+Como se podía esperar, ninguna diferencia atendiendo a las asignaturas ha salido significativa. Puesto que el test no es significativo al no haberse encontrado diferencias significativas, no tiene sentido analizar el tamaño de dicho efecto. Sin embargo, procedemos a calcularlo por motivos formativos.
+
+```{r}
+library(effectsize)
+kendalls_w(x = "score", groups = "subject", blocks = "student", data = data)
+```
+
+Como se puede ver, el tamaño de efecto asociado es pequeño.
+
+## Contraste para medias: test de una variable y más de un factor
+
+### ANOVA (two-way)
+
+Como ejemplo de realización de este tipo de test en R vamos a utilizar el dataset ToothGrowth, que mide el crecimiento de los dientes en unos conejillos de indias a los que se les sometió a distintas dosis de vitamina C administradas
+de diversas maneras. En concreto, se les podía aplicar 0.5, 1 o 2 mg al día en zumo de naranja (OJ) o ácido ascórbico (VJ). La hipótesis nula del test refleja que el tratamiento (combinación de dosis y forma de administración) no genera
+ninguna diferencia en el tamaño de los dientes, mientras que la alternativa es que sí la habrá. Cada muestra del conjunto de datos vendrá de un conejillo de indias diferente.
+
+```{r}
+data <- ToothGrowth
+head(data, 10)
+```
+
+Comprobamos la normalidad de los datos con el test de Shapiro, agrupando en esta ocasión por las dos variables que suponen los dos factores que estamos considerando: `supp` y `dose`.
+
+```{r}
+data%>%group_by(supp, dose)%>%shapiro_test(len)
+```
+
+A la vista de los resultados, no descartamos la hipótesis nula de normalidad para ninguna de las combinaciones de `supp` y `dose` porque el p-valor resultante es mayor a 0.05 en todos los casos. Por lo tanto, podemos aplicar el test ANOVA two-way. Primero, realizaremos una pequeña visualización exploratoria.
+
+```{r}
+library(ggpubr)
+ggboxplot(data, x = "dose", y = "len", color = "supp",
+palette = c("#00AFBB", "#E7B800"))
+```
+
+El test lo podemos realizar, como se indica a continuación, añadiendo las dos variables de interés a la parte derecha de la ecuación.
+
+```{r}
+model <- aov(len ~ dose + supp, data = data)
+summary(model)
+```
+
+Tal y como muestra el resumen del test, ambas variables tienen un efecto significativo de manera independiente en la longitud de los dientes. Podemos estudiar también las consecuencias de la interacción entre ambos factores. Esto se puede incluir en el modelo *multiplicando* ambos factores, como se ve a continuación.
+
+```{r}
+model <- aov(len ~ dose + supp + dose*supp, data = data)
+summary(model)
+```
+
+En esta ocasión, se puede apreciar que la interacción de ambos factores también es significativa. Es decir, la combinación del tipo de dosis y de la manera de administración genera un efecto estadísticamente significativo en la longitud de los dientes de los conejillos de indias.
+
+El tamaño de efecto se puede comprobar con la función `eta_squared` del paquete `rstatix`. La podemos llamar poniendo `rstatix::` delante.
+
+```{r}
+rstatix::eta_squared(lm(len ~ dose + supp + dose*supp, data = data))
+```
+
+Como se puede ver, el tamaño de efecto asociado a la dosis es grande, y el del suplemento es mediano, mientras que el de la interacción de ambos factores es pequeño. Por lo tanto, los tres factores tienen una influencia significativa en la longitud de los dientes, siendo la dosis la que tiene un mayor efecto. Por otro lado, el tipo de suplemento afecta en menor medida, teniendo un tamaño de efecto mediano, y la interacción de ambos factores presenta un efecto pequeño.
+
+## Visualización de contraste de medias
+Las visualizaciones que hemos visto hasta ahora pueden completarse mostrando los resultados de los test, incluyendo, por ejemplo, sus p-valores. A tal efecto utilizaremos las librerías `rstatix`, que ofrecen una gran variedad de test estadísticos en un formato más interoperable, y `ggpubr`, que se encargará de la parte gráfica. Primero se realiza el test, y luego se añade a la visualización con la función `stat_pvalue_manual`. Al test se le añade la función `add_xy_position` para ubicar los corchetes gráficamente.
+
+* Se puede añadir el p-valor del test
+
+```{r}
+library(rstatix)
+library(ggpubr)
+
+test <- wilcox_test(data = insurance, formula = charges ~ smoker)
+
+ggboxplot(insurance, y= "charges", x = "smoker", fill = "smoker", add = "mean")+
+  stat_pvalue_manual(test%>%add_xy_position(), label = "p")
+```
+
+* Se puede añadir el nivel de significatividad
+
+```{r}
+test <- test%>%add_significance()
+ggboxplot(insurance, y= "charges", x = "smoker", fill = "smoker", add = "mean")+
+  stat_pvalue_manual(test%>%add_xy_position(), label = "p.signif")
+```
+
+
+* Además, se pueden añadir más elementos, como la media como texto
+
+```{r}
+means <- aggregate(charges~smoker, insurance, mean) #Se calcula la media del coste por categoría de fumador
+means$charges <- round(means$charges,2) #Redondeamos el valor, por motivos gráficos
+
+ggboxplot(insurance, y= "charges", x = "smoker", fill = "smoker", add = "mean")+
+          stat_pvalue_manual(test%>%add_xy_position(), label = "p.signif")+
+          geom_text(data = means, aes(label = charges, y = charges + 2000)) #Añadimos un desvio de 2000 unidades para que el texto con la media no se superponga al punto que marca la media
+```
+
+## Contraste para varianzas: análisis de la homocedasticidad
+
+### Test de Levene
+
+Para comprobar la homocedasticidad de una variable en relación con otra podemos utilizar el test de Levene, del paquete `rstatix`. Para ello se aplica una fórmula, en la que se escribe a la izquierda la variable de la que queremos comprobar la homocedasticidad y a la derecha la variable dependiente. Por ejemplo, para estudiar la homocedasticidad de la variable edad entre los dos sexos, haremos:
+
+```{r}
+rstatix::levene_test(formula = age~sex, data = insurance)
+```
+
+El p-valor del test nos indica que no se puede descartar la hipótesis nula de homocedasticidad de la variable edad, por lo que asumimos que la varianza de la edad es estadísticamente igual en ambos grupos. Sin embargo, la varianza del coste de la póliza no es homocedástica al considerar ambos grupos, como se puede ver a continuación.
+
+```{r}
+rstatix::levene_test(formula = charges~sex, data = insurance)
+```
+
+## Bondad de ajuste: análisis de la normalidad
+Los siguientes tests permiten comprar la normalidad de la distribución de los datos, es decir, si se deben utilizar tests paramétricos o no paramétricos para realizar contrastes de hipótesis.
+
+### Test Kolmogorov-Smirnov
+El test de Kolmogorov-Smirnov es una prueba estadística que nos indicará de manera numérica si una variable sigue una distribución normal o no lo hace. A priori, es apropiado utilizarla para variables continuas con un tamaño de muestra mayor de 50. El test se basa en un contraste de hipótesis, teniendo como hipótesis nula que no existe diferencia entre la distribución de nuestros datos y una distribución normal.
+
+```{r}
+set.seed(13)
+ datosNormales <- rnorm(100)
+ ks.test(datosNormales, "pnorm")
+```
+
+En este caso hemos utilizado el test Kolmogorov-Smirnov para comprobar si una distribución generada a partir de `rnorm` era normal. El p-valor obtenido es de 0.8, por lo que podemos aceptar que sí lo es.
+
+Por otro lado, si hicieramos el test a la variable `age`, que el *Q-Q plot* ya dejaba ver su no normalidad, obtendríamos un p-valor de $2.2e-16$, prácticamente 0, indicando que, efectivamente, es una variable no distribuida normalmente.
+
+```{r}
+edad <- insurance$age
+ks.test(edad, "pnorm")
+```
+
+* **Test de Kolmogorov-Smirnov con modificación de Lilliefors**
+
+El test de Kolmogorov-Smirnov ha sido bastante criticado debido a que asume que se conoce la media y la desviación poblacional, lo que en la mayoría de los casos no es posible. Esto hace que el test sea conservador y poco potente, es decir, pocas veces concluye que la distribución no es normal. Para solventar este problema, existe una variante del test llamada “la corrección de Lilliefors” o “Test Lilliefors”, que no parte de la base de que conocemos la media y la desviación. En R el test Lilliefors no se encuentra en el paquete básico precargado, por lo que será necesario instalar el paquete estadístico `DescTools`.
+
+```{r}
+library(DescTools)
+datosNormales <- rnorm(100)
+LillieTest(datosNormales)
+```
+
+Observamos que el p-valor sigue estando por encima de 0.05, indicando que la distribución es normal. Sin embargo, es menor que el obtenido con el de Kolmogorov-Smirnov, ya que es un test más exigente que este.
+
+### Test Shapiro-Wilk
+Cuando contamos con un número de muestras pequeño, menor de 50 valores, tanto el test de Kolmogorov-Smirnov como su corrección de Lilliefors no son apropiados, y se necesita uno más sensible. En estos casos, se utiliza el test Shapiro-Wilk, que continúa teniendo como hipótesis nula que los datos tienen una distribución normal.
+
+```{r}
+datosNormales <- rnorm(30)
+shapiro.test(datosNormales)
+```
+
+## Categorizando variables cuantitativas
+Durante este capítulo hemos presentado numerosos test estadísticos donde la variable independiente es una variable categórica. Sin embargo, es posible aplicarlos también sobre cuantitativas transformando estas variables en categóricas. 
+
+Primero, utilizaremos una serie de condiciones anidadas gracias a la función `ifelse`, a la cual se le pasa como argumento la condición que queremos investigar, y después qué tiene que devolver si se cumple y si no se cumple. Vamos a dividir la edad en tres rangos que a priori pueden tener sentido.
+```{r}
+edad <- insurance$age
+insurance$edadDiscret <- ifelse(edad<=30, "joven", 
+                                ifelse(edad>=61, "mayor", 
+                                        "edad media"))
+table(insurance$edadDiscret)
+```
+
+A continuación, usaremos la función `discretize` de `arules` para conseguir 3 cortes (`breaks`) equiespaciados, utilizando el método `interval`.  En este caso, los tramos que sugiere la función se hacen teniendo en cuenta la muestra disponible.
+```{r}
+library(arules)
+insurance$edadDiscret <- discretize(edad, method = "interval", breaks = 3)
+table(insurance$edadDiscret)
+```
+
+Finalmente, vamos a hacer de nuevo 3 grupos (`breaks`) de manera que todos tengan el mismo número aproximado de individuos en ellos, utilizando el método `frequency`. En esta ocasión, los tramos de edad que sugiere la función son similares a los obtenidos para intervalos equiespaciados. Sin embargo, la cantidad de individuos por grupo está mejor distribuida. 
+
+```{r}
+library(arules)
+insurance$edadDiscret <- discretize(edad, method = "frequency", breaks = 3)
+table(insurance$edadDiscret)
+```
+
+
+# Capítulo 7. Correlaciones y regresión lineal
+
+## Correlación lineal
+Obtener una correlación en R resulta muy sencillo gracias a la función `cor`. De hecho, con la misma función se pueden conseguir los coeficientes de correlación de Pearson, Spearman y Kendall a través del argumento `method`. Por defecto devuelve el coeficiente de Pearson.
+
+Por ejemplo, vamos a obtener la correlación entre la edad y el coste de la póliza médica. Como ambas variables son cuantitativas, conseguiremos el coeficiente de Pearson. La función `cor.test`, además de darnos el coeficiente de correlación también devuelve un p-valor asociado a este.
+
+```{r}
+coste <- insurance$charges
+edad <- insurance$age
+cor.test(coste, edad)
+```
+El coeficiente de correlación alcanzado es de 0.30, lo que implica una asociación moderada entre ambas variables. Existe, por lo tanto, una cierta relación entre la edad de una persona y el coste de su póliza, pero no es demasiado grande, por lo que debe de haber otros factores que determinen el coste. Además, la correlación es significativa, ya que el p-valor asociado es prácticamente 0.
+
+Por otra parte, buscaremos el coeficiente de correlación entre la edad de las personas y su número de hijos. Ambas son variables cuantitativas, pero `children` no tiene una distribución normal, por lo que se obtendrá el coeficiente de Spearman. Las variables que tienen pocos valores diferentes, como el número de hijos, suelen ser no normales.
+
+```{r}
+cor(insurance$age, insurance$children, method = "spearman")
+```
+En este caso, la relación que existe entre la edad y el número de hijos es prácticamente nula. Como se ve en el siguiente gráfico, la edad mediana es muy similar independientemente del número de hijos.
+
+```{r}
+ggplot(insurance, aes(x = children, y = age, group = children))+
+     geom_boxplot()
+```
+
+En lugar de ir estudiando de manera individual cada posible par de variables, se puede realizar el análisis a todas de manera simultánea, generando una matriz de correlaciones. Obtener esta matriz es, generalmente, uno de los primeros pasos del análisis exploratorio de datos. Es importante que seleccionemos para elaborarla únicamente las variables que sean numéricas.
+
+```{r}
+cor <- cor(insurance[, c("age", "bmi", "children", "charges","SittingHours")])
+cor
+```
+
+Con la matriz de correlación se puede ver, por ejemplo, que las variables más correlacionadas con el coste de la póliza son la edad y el IMC. 
+
+Existe una librería (`corrplot`) especializada en dibujar matrices de correlación, lo que puede ser de mucha utilidad a la hora de presentar los resultados de una forma más visual. Tiene una gran cantidad de parámetros modificables para obtener el gráfico que más se ajuste a nuestras necesidades.
+
+```{r}
+library(corrplot)
+corrplot(cor, method = "ellipse")
+```
+
+Se puede dibujar de manera simultánea, junto con la matriz de correlación, una matriz de significatividad de estas correlaciones, para poder centrarse en las que sean verdaderamente importantes. Esta acción se lleva a cabo fácilmente con las funciones `ggcorrplot` y `cor_pmat` de la librería `ggcorrplot`, como alternativa a la vista anteriormente. La función `cor_pmat` calcula la significatividad de las correlaciones, si le pasamos nuevamente el conjunto de datos, solo con las variables de las que hayamos calculado la correlación previamente. Aparecerá tachada con una x aquellas correlaciones que no son significativas.
+
+```{r}
+library(ggcorrplot)
+p.mat <- cor_pmat(insurance[, c("age", "bmi", "children", "charges", "SittingHours")])
+ggcorrplot(cor, lab = T, p.mat = p.mat)
+```
+
+## Regresión lineal simple
+
+Llevaremos a cabo un ejemplo completo de creación de un modelo de regresión simple, realizando todas las comprobaciones necesarias expuestas en las secciones anteriores. Vamos a ajustar un modelo que estime el coste de la póliza médica de acuerdo al IMC de las personas. 
+
+Como primer paso, estudiamos si existe una relación lineal entre ambas variables. 
+
+```{r}
+coste <- insurance$charges
+imc <- insurance$bmi
+cor.test(coste, imc)
+```
+
+Se puede ver que, aunque la correlación entre ambas variables no sea muy alta, sí existe una relación lineal, como indica un p-valor tan pequeño. Procedemos, por lo tanto, a estimar el modelo y estudiar los coeficientes resultantes.
+
+```{r}
+mod <- lm(charges ~ bmi, data = insurance)
+summary(mod)
+```
+
+Comprobamos que el modelo construido resulta significativo a nivel global ($p-valor < 0.001$). Sin embargo, tiene un $R^2$ ajustado muy bajo, de 0.04, lo cual indica que solo el 4% de la variabilidad en el coste de las pólizas está explicado por el IMC de las personas. 
+
+El intervalo de confianza de los parámetros lo podemos obtener con la siguiente instrucción. Esta nos devuelve un rango de valores donde, con el 95% de probabilidad, se encontrará la cantidad real de dólares en que se incrementará la póliza por cada unidad de IMC que aumente el individuo.
+
+```{r}
+confint(mod)
+```
+
+La ecuación del modelo obtenido que permite estimar el coste de la póliza atendiendo únicamente al IMC se expresa a continuación. Se puede decir que el coste medio de la póliza es de 1192.9\$, y que por cada unidad que se incremente el IMC del sujeto, su póliza aumentará de media 393.9\$: $\hat{charges` = 1192.94 + 393.87*bmi$
+
+Sin embargo, antes de considerar este modelo como válido para realizar estimaciones, es necesario efectuar un análisis de los residuos para comprobar que cumple el resto de requisitos.
+
+```{r}
+plot(mod)
+```
+
+
+A la izquierda se muestran los residuos por cada valor estimado y se puede apreciar cómo estos residuos, es decir, los errores del modelo, no son iguales cuando estima valores pequeños de coste que cuando son valores grandes. Esta circunstancia nos indica que la varianza de los residuos puede ser no homocedástica. Además, atendiendo a la segunda figura, la distribución de los residuos no es demasiado lineal. Para asegurarnos, vamos a realizar un test de normalidad a los residuos del modelo.
+
+```{r}
+shapiro.test(mod$residuals)
+```
+
+Los datos evidencian que se descarta la hipótesis nula de normalidad de los residuos, por lo que, tal y como se había intuido de los residuos, no se cumplen los requisitos para considerar válido este modelo.
+
+## Regresión lineal múltiple
+Vamos a efectuar un ejemplo completo de creación de un modelo de regresión múltiple, realizando todas las comprobaciones necesarias expuestas en las secciones anteriores. Ajustaremos un modelo que estime el beneficio de una startup de acuerdo con sus gastos en investigación, administración y marketing. Para ello, utilizaremos el dataset `50_Startups`, disponible en https://www.kaggle.com/farhanmd29/50-startups, que incluye esta información de 50 startups de diferentes estados de Estados Unidos. A continuación vemos un breve resumen del mismo. 
+
+
+```{r}
+startups <- read.csv("50_Startups.csv")
+head(startups)
+```
+
+Como primer paso, estudiaremos la presencia de multicolinealidad. Con este fin obtendremos la matriz de correlación de las variables `R.D.Spend`,` Administration` y `Marketing.Spend`. 
+
+```{r}
+library(ggcorrplot)
+data = startups[,c("R.D.Spend", "Administration", "Marketing.Spend")]
+ggcorrplot(cor(data), p.mat = cor_pmat(data), lab = TRUE)
+```
+
+El `corrplot` indica que la correlación entre el gasto en marketing (`Marketing.Spend`) y el gasto en investigación y desarrollo (`R.D.Spend`) es bastante alta, aunque no sea significativa, lo que podría representar un problema, por lo que estudiaremos el VIF una vez creado el modelo.
+Seguidamente, construiremos el modelo y obtendremos el VIF generalizado. La función `VIF` proviene del paquete `car`.
+
+```{r}
+mod <- lm(Profit ~ R.D.Spend + Administration + Marketing.Spend, data = startups)
+car::vif(mod)
+```
+
+Los coeficientes del VIF se encuentran entre 1 y 2.5 por lo que, a pesar de la correlación alta entre dos de las variables, concluimos que no supone un problema de multicolinealidad. Procedemos, por tanto, a estudiar los coeficientes resultantes del modelo.
+
+```{r}
+summary(mod)
+```
+
+Vemos que el modelo construido resulta significativo a nivel global ($p-valor < 0.001$). Además, tiene un $R^2$ ajustado de 0.95, un valor bastante alto que indica que el 95% de la variabilidad en el beneficio de las startups está explicado por las variables introducidas en el modelo. Sin embargo, apreciamos que hay dos variables incluidas (`Administration` y `Marketing.Spend`) que no resultan significativas, por lo que si quisiéramos construir el modelo más óptimo habría que excluirlas y volver a calcular el modelo sin ellas. En ese caso, estaríamos ante un modelo lineal simple. Sin embargo, se mantiene el análisis posterior como ejemplo de estudio de una regresión lineal múltiple.
+
+Como medida de la robustez del modelo, elaboramos los intervalos de confianza de los coeficientes. Se puede observar que coinciden las variables cuyo intervalo de confianza incluye el cero con aquellas con el parámetro no significativo.
+
+```{r}
+confint(mod)
+```
+
+La ecuación del modelo obtenido, que relaciona el beneficio con el gasto realizado en cada concepto, se expresa a continuación. En este caso, por cada dólar invertido en investigación y desarrollo, el beneficio aumenta 8\$. Tanto en el gasto en marketing como en administración apreciamos que los coeficientes están en torno a cero, lo que se debe a que son variables no significativas en el modelo y, por tanto, su diferencia respecto a cero es debida al error de muestreo. Es por ello que no se debe hacer inferencia con variables no significativas.
+
+$\hat{Profit` = 50.120 + 8.06 * R.D.Spend + 0.027 * Marketing - 0.027 * Administration$
+
+A continuación, realizaremos el estudio de los residuos del modelo.
+
+```{r}
+plot(mod)
+```
+
+Vemos en la segunda figura de la fila superior que la distribución es prácticamente lineal, por lo que se cumple el requisito de normalidad y homocedasticidad de los residuos. Además, como se observa en la figura de la segunda fila, no hay valores extremos, ya que la distancia de Cook de ninguna muestra supera los 0.3.
+
+Finalmente, ahora que ya hemos construido un modelo válido, podemos utilizarlo para realizar estimaciones sobre el beneficio de nuestra startup. Por ejemplo, supongamos que hacemos un gasto en investigación de 105.000\$, otro en marketing de 70000\$ y un tercero en administración de 75.000\$. El beneficio estimado sería de 134.617\$, con un intervalo de confianza de 95% [124434, 144800]\$.
+
+```{r}
+datosEjemplo = data.frame(R.D.Spend = 105000, Marketing.Spend = 70000, Administration = 75000)
+predict(mod, datosEjemplo, interval = "confidence")
+```
+
+### Inclusión de variables categóricas
+
+Como ejemplo de la manera en que lo trata R, se incluye el modelo que estima el coste de la póliza de acuerdo a si el sujeto es mujer u hombre, y su edad. A la hora de definir qué categoria de la variable toma el valor 0 y cuál el valor 1, si no se le fuerza de alguna manera, R lo hace siguiendo el orden alfabético. 
+
+```{r}
+mod <- lm(charges ~ age + sex, data = insurance)
+summary(mod)
+```
+
+Si la variable categórica tiene más de dos clases, es necesario generar tantas variables *dummy* como categorías menos 1. Por ejemplo, se incluye el modelo que estima el coste de la póliza de acuerdo con la edad y la región en la que reside el individuo:
+
+```{r}
+mod <- lm(charges ~ age + region, data = insurance)
+summary(mod)
+```
+
+La ecuación del modelo estimado sería $\hat{Coste` = 3252.69 + 258.57 * Edad - 970.30 * Noroeste + 1414.09 * Sureste - 1107.77 * Suroeste$. Se ha tomado como referencia la región noreste, y se puede comprobar que, a priori, el coste medio estimado de la póliza de una persona del noroeste o del suroeste es, respectivamente, 970.30\$ o 1107.77\$ más barata, mientras que la del suroeste es 1414.09\$ más cara. Sin embargo, como se explicará más adelante, estas afirmaciones serían válidas en caso de que las $\beta$ fuesen significativas, pero al no serlo no se pueden afirmar diferencias en el coste de la  póliza médica entre regiones. 
+
+### Interacciones entre variables
+En R, podemos incluir una interacción entre variables introduciéndolas unidas por el símbolo `*` en la fórmula. Además, es importante considerar que en el momento en que incorporamos la interacción de dos variables, también se incluye cada una de las variables por separado en el modelo. Por ejemplo, la estimación del coste de las pólizas considerando la edad, el sexo, el ser fumador y la interacción de las dos últimas. El insertar la interacción entre estas dos variables tiene sentido si pensamos que no es igual que una mujer sea fumadora que lo sea un hombre, es decir, el efecto que provoca en el coste que una persona sea fumador es diferente a si es un hombre o una mujer.
+
+```{r}
+ mod <- lm(charges ~ age + sex*smoker, data = insurance)
+summary(mod)
+```
+
+Como vemos en el resumen del modelo, para estimar el coste de la póliza es significativo la edad de la persona, el que sea fumador y la interacción de ser fumador con su sexo. Sin embargo, el sexo por sí solo no es significativo. Por otro lado, como la interacción entre fumador y sexo es significativa, efectivamente el coste para una persona que sea fumador es diferente a si es un hombre fumador o una mujer fumadora. En particular, ser fumador aumenta el coste en 22213\$, pero si eres hombre fumador se incrementa 2909\$ más. La ecuación resultante sería: $\hat{Coste` = -2138.91 + 274.65 * Edad + 22213.97 * SerFumador - 502.30 * SerHombre + 2909.84 * SerHombreFumador$.
+
+### Regresión polinómica
+Para ejemplificar el uso de las regresiones polinómicas, trabajaremos con el conjunto de datos `Boston`, que contiene 14 variables sobre 506 propiedades en Boston, como contaminación, criminalidad de la zona, número de habitaciones, ratio profesor-alumno, información socioeconómica y valor de las propiedades. Vamos a generar dos modelos, uno que estime el valor de la propiedad (`medv`, en miles de dolares) solo considerando el porcentaje de población de la zona que se encuentra en una situación socioecónomica baja (`lstat`), y otro considerando este término al cuadrado. Para incorporar los términos polinómicos los incluimos en la fórmula dentro de la función `I()`, como se puede ver en el ejemplo.
+
+```{r}
+data("Boston", package = "MASS")
+modLineal <- lm(medv ~ lstat, data = Boston)
+summary(modLineal)
+```
+
+La ecuación ajustada del modelo es $\hat{Valor` = 34.55 - 0.95 * Porcentaje_{modesto}$. Es decir, a más población modesta desde el punto de vista socioeconómico, menor será el valor del inmueble.
+
+```{r}
+modCuadratico <- lm(medv ~ lstat + I(lstat^2), data = Boston)
+summary(modCuadratico)
+```
+
+La ecuación ajustada del nuevo modelo es: $\hat{Valor` = 42.86 -2.33 * Porcentaje_{modesto` + 0.04 *  Porcentaje_{modesto}^2$
+
+Para comprender mejor las diferencias entre ambos modelos, vamos a hacer estimaciones de manera gráfica. Para ello, dibujaremos los valores reales, los estimados por la ecuación ajustada del modelo lineal y los estimados por la ecuación ajustada por el modelo cuadrático. 
+
+```{r}
+# Obtenemos las estimaciones
+dataLstat = data.frame(lstat = Boston$lstat)
+estimacionLineal <- predict(modLineal, dataLstat)
+estimacionCuadratica <- predict(modCuadratico, dataLstat)
+
+# Creamos un data.frame con la información necesaria para generar el gráfico
+  
+Valor <- data.frame(Lstat = Boston$lstat, Valor = Boston$medv,  EstimacionLineal = estimacionLineal, EstimacionCuadratica = estimacionCuadratica)
+                     
+# Hacemos el gráfico
+
+ggplot(Valor, aes(x = Lstat, y = Valor))+ 
+  geom_point(aes(col = "Valor real"))+
+  geom_smooth(alpha = 0.2)+
+  geom_line(data = Valor, aes(x = Lstat, y = estimacionLineal, col = "Estimación lineal"), lwd = 2)+
+  geom_line(data = Valor, aes(x = Lstat, y = estimacionCuadratica, col = "Estimación cuadrática"), lwd = 2)+
+  labs(col = "Tipo de dato")+
+  theme_minimal()
+```
+### Selección de variables independientes
+Vamos a ver dos ejemplos muy sencillos en R, uno de selección hacia delante y otro hacia atrás, a partir del modelo que busca estimar las ganancias de las startups considerando sus gastos en diferentes departamentos. Primero, construimos el modelo con todas las posibles variables a considerar. Después, lo pasamos a la función `stepAIC()` de `MASS`, a la cual le indicamos por el argumento `direction` si queremos que haga la selección hacia delante (*forward*) o hacia atrás (*backward^). Al señalarle `trace = TRUE}, nos informará de cada paso realizado.
+
+La selección de características será la que optimice el *Akaike Information Criterion* (AIC) del modelo. El AIC es una métrica que permite comparar modelos similares al $R^2_{ajustado}$, ya que tiene en cuenta cómo de bien estima la variable dependiente el modelo y el número de variables independientes que utiliza. 
+
+En el caso hacia atrás, como se ve a continuación, nos informa de que el modelo empieza con un AIC de 920.87. El primer paso es suprimir la variable `State`, que es la que menos AIC aporta. En el siguiente el modelo tiene 916.88 de AIC, y se elimina `Administration`, con menos AIC en ese momento. El modelo final contiene únicamente las variables de gasto en investigación (`R.D.Spend`) y en marketing (`Marketing.Spend`).
+
+
+```{r}
+library(MASS)
+modeloCompleto <- lm(Profit ~., data = startups)
+step.model <- stepAIC(modeloCompleto, direction = "backward", trace = T)
+```
+
+En el proceso hacia delante, hemos de crear un modelo vacío e indicarle cuál es el rango de posibilidades que tiene en el argumento `scope`. Le señalamos que la opción más simple es el mismo modelo vacío y que la más completa considere todas las variables que mencionamos. La selección en este caso comienza con un AIC de 1061.42, y en una primera acción incorpora la variable `R.D.Spend`, que es la que más empequeñece el AIC. En un siguiente paso se añade `Marketing.Spend`, la única que queda que empequeñece el AIC. Aquí se detiene la selección.
+
+```{r}
+modeloVacio <- lm(Profit ~ 1, data = startups)
+step.model <- stepAIC(modeloVacio, direction = "forward",
+                scope=list(lower = modeloVacio, upper = ~R.D.Spend + Administration + Marketing.Spend + State), trace = T)
+```
+
+En esta ocasión, ambas direcciones nos han dado el mismo resultado, pero podría ocurrir en modelos con muchas variables que las conclusiones fueran diferentes. Si en la función `stepAIC()` indicamos como dirección *both*, devuelve directamente la mejor solución considerando ambas direcciones.
+
+### Validación y test
+
+* **Bootstrap**
+El bootstrap nos permite obtener una mejor estimación tanto de los valores de los coeficientes del modelo como de lo bueno que es el modelo resultante. Lo primero se lleva a cabo con la función `boot()` de la librería `boot`, a la cual se le pasa el conjunto de datos, el modelo y la cantidad de remuestras que se quieren considerar. En este ejemplo, realizaremos 100 remuestras.
+
+```{r}
+library(boot)
+model_coef <- function(data, index){
+    coef(lm(Profit ~., data = startups, subset = index))
+}
+boot(startups, model_coef, 100)
+```
+
+`boot()` reporta la estimación de los coeficientes obtenida por *bootstrap*, siendo t1 el intercepto ($\beta_0$), t2 el gasto en investigación ($\beta_1$) y t3 el gasto en administración ($\beta_2$), de acuerdo al orden de las variables en el conjunto de datos ($\beta_n$). Como se puede apreciar, son muy similares a los obtenidos por el modelo hecho con todos los datos, que se exponen a continuación, pero los alcanzados por *bootstrap* han sido calculados considerando la variabilidad muestral, por lo que son más fiables.
+
+```{r}
+ summary(lm(Profit ~., data = startups))
+```
+
+En cuanto al rendimiento del modelo, también lo podemos calcular considerando *bootstrap*. Para ello es necesaria la librería `caret`, usada de la siguiente manera:
+
+```{r}
+library(caret)
+train.control <- trainControl(method = "boot", number = 100)
+train(Profit ~., data = startups, method = "lm", trControl = train.control)
+```
+
+# Capítulo 8. Detección de valores atípicos y faltantes
+
+## Valores atípicos u *outliers*
+
+### Detección univariante
+
+* **Detección mediante EDA**
+
+Las formas más sencillas de detección de *outliers* nos ayudarán sobre todo a encontrar aquellos que provengan de errores. Al obtener la descripción de la variable, junto con sus mínimos y máximos, o al visualizar su histograma o su boxplot, podremos intuir la presencia de este tipo de valores. Vamos a estudiar la variable IMC (`bmi`), para lo que obtendremos su descripción básica mediante `summary()`, y elaboraremos su histograma y su boxplot.
+
+```{r}
+summary(insurance$bmi)
+```
+
+```{r}
+par(mfrow=c(1,2))
+hist(insurance$bmi)
+boxplot(insurance$bmi)
+```
+
+En este caso observamos que hay un salto bastante grande entre el tercer cuartil y el máximo, intuyéndose una cola a la derecha en la distribución. Ello podría deberse a un error en la entrada de datos o a valores extraordinariamente altos. El histograma muestra esa ligera cola a la derecha, y en el boxplot podemos observar unos puntos que se encuentran fuera de los bigotes. Sin embargo, no están tan alejados como para poder deducir simplemente que se trata de errores en la introducción de datos. Al fin y al cabo, un IMC de 53 podría corresponder a una persona que pese unos 145 kilos y mida 1.65 metros, lo cual, aunque improbable, es posible. 
+
+De cualquier manera, la utilización del boxplot y la información de los cuartiles es el primer método del que disponemos para detectar outliers potenciales. Con él se puede intuir que serán valores extremos todos aquellos puntos que se encuentren fuera del intervalo $[q_1 - 1.5* IQR, q_3 + 1.5* IQR]$, siendo $q_1$ el primer cuartil, $q_3$ el tercer cuartil e IQR el intervalo intercuartílico, esto es, $q_3 - q_1$. Por ejemplo, en el caso de la variable `bmi`, el intervalo sería [26.3 - 1.5 * 8.4, 34.7 + 1.5 * 8.4], es decir [13.7, 47.3]. Se concluye que el menor valor del intervalo es más bajo que el mínimo de la distribución, por lo que no habrá outliers por la izquierda. Sin embargo, el valor más alto de la distribución es mayor que el máximo del intervalo, por tanto sí los habrá por la derecha, como se puede ver en el boxplot. Mediante las siguientes instrucciones podremos recuperar los valores extremos y el número de fila en nuestro conjunto de datos.
+
+```{r}
+outliersIQR <- boxplot.stats(insurance$bmi)$out
+print(sort(outliersIQR))
+```
+
+Con la función `which` podemos ver cuáles son los individuos que tienen estos valores extremos.
+
+```{r}
+which(insurance$bmi %in% outliersIQR)
+```
+
+Así, parece que tenemos 9 outliers potenciales. Este método de detección es el más sencillo e intuitivo, pero no se recomienda su uso pues resulta demasiado agresivo.
+
+* **Detección mediante tests estadísticos**
+
+El *z-score* es una técnica utilizada para normalizar los datos, devolviéndolos escalados entre -1 y 1, con una media de 0 y desviación típica de 1. Las variables numéricas, una vez tipificadas con el *z-score*, se pueden comparar con una distribución normal para ver cuál es la probabilidad de que cada valor pertenezca a ella o no. Esta acción se puede realizar directamente utilizado la librería `outliers`, mediante su función `scores()`. Es interesante leer la documentación de esta función dada su flexibilidad, para lo que se puede utilizar el comando `help(scores)`. El parámetro `type` sirve para especificar qué tipo de métrica queremos obtener. El parámetro `prob` se emplea para definir el tipo de salida que pretendemos lograr. Si no lo definimos, nos devolverá el `score`, si lo definimos como `TRUE` nos retornará el p-valor obtenido tras comparar los scores con su respectiva distribución de referencia, mientras que si lo definimos como un número entre 0 y 1 nos devolverá un vector lógico, compuesto de TRUE y FALSE, marcando las posiciones cuyos p-valores son mayores que el que se ha introducido. Por ejemplo,  si lo definimos como 0.95, nos indicará las posiciones con un p-valor mayor a 0.95, que representarán al 5% de valores más extremos. Si lo definimos como 0.99, nos devolverá el 1% más extremo de los datos. 
+
+```{r}
+library(outliers)
+Perc5MasExtremo <- scores(insurance$bmi, type = "z", prob = 0.95)
+cat(sum(Perc5MasExtremo), "valores pertenecen al 5% más extremo")
+```
+
+```{r}
+library(outliers)
+Perc1MasExtremo <- scores(insurance$bmi, type = "z", prob = 0.99)
+cat(sum(Perc1MasExtremo), "valores pertenecen al 1% más extremo\n")
+```
+
+Se observa que el número de valores extremos aumenta considerablemente respecto a los calculados con el método anterior, pero tenemos un método estadístico detrás para reforzar nuestra decisión. Por ejemplo, si decidiéramos excluir a la población cuyo IMC forma parte del 1% más extremo para centrarnos en el 99% de la población restante, estaríamos eliminando los siguientes valores:
+
+```{r}
+data.frame(Index = which(Perc1MasExtremo), 
+           Value = insurance$bmi[Perc1MasExtremo])%>%arrange(Value)
+```
+
+Apreciamos que una observación es considerada outlier por tener poco IMC, mientras que las otras 21 lo son por tenerlo muy alto.
+
+### Detección multivariante
+Para ejemplificarlo estudiemos los valores de `bmi` y `charges` de forma conjunta, de manera que terminemos eliminando a los sujetos cuya diferencia entre ambos valores sea extrema. Por ejemplo, personas con el IMC muy alto que paguen demasiado poco, o viceversa. 
+
+Primero, seleccionamos las variables
+```{r}
+studyData <- insurance%>%select(bmi, charges)
+```
+
+Ahora las normalizamos con el z-score
+
+```{r}
+studyData$bmi <- scores(studyData$bmi, type = "z")
+studyData$charges <- scores(studyData$charges, type = "z")
+```
+
+Calculamos la distancia de mahalanobis
+```{r}
+mahalanobis_distance <- mahalanobis(studyData,
+                                    colMeans(studyData),
+                                    cov(studyData))
+```
+
+Finalmente, detectamos los valores anómalos
+
+```{r}
+outliers <- scores(mahalanobis_distance, type = "z", prob = 0.99)
+cat(sum(outliers), "valores pertenecen al 1% más extremo")
+```
+
+A continuación, mostramos los primeros 15 casos:
+
+```{r}
+data.frame(Index = which(outliers), 
+           BMI = insurance$bmi[outliers],
+           Charges = insurance$charges[outliers])%>%
+    arrange(BMI, Charges)%>%
+    head(15)
+```
+
+Observamos que la mayoría de los outliers detectados tiene costes muy altos (recordamos que la media del coste de la póliza era de 13270\$), además de tener el IMC en rango de obesidad, salvo un caso (17.8). Si se analizan el resto de valores, también aparecen observaciones con costes muy bajos.
+
+Finalmente, a la hora de emplear métodos multivariantes es importante manejar variables que tengan relación entre sí en el contexto del que provengan los datos.
+
+## Valores faltantes
+
+### Descripción y visualización
+
+Antes de aplicar las funciones es importante asegurarse de que todos los valores faltantes aparecen, en efecto, como `NA`. Puede suceder, sobre todo si los datos se han recogido manualmente en un éxcel, que estos valores hayan sido incluidos como los responsables de la recogida de datos han considerado oportuno. Algunos ejemplos pueden ser "9999", "99999", o simplemente dejar la celda vacía con un espacio " ". Si descubrimos alguno de estos casos en nuestro dataset, podemos solucionarlo de la siguiente manera. Antes de aplicar las siguientes instrucciones, es importante saber si los valores que vamos a sustituir por `NA` son razonablemente posibles en los datos. Por ejemplo, si se recogen superficies de países, puede ser que "99999" sea un valor correcto.
+```{r eval = F}
+dataset[dataset == ""] = NA
+dataset[dataset == " "] = NA
+dataset[dataset == 9999] = NA
+dataset[dataset == 99999] = NA
+```
+
+A nivel general, `n_miss()` devuelve la cantidad de celdas vacías que hay en el conjunto de datos. Por otra parte, `pct_miss_case()` lo hace con el porcentaje del total.
+
+```{r}
+library(naniar)
+n_miss(airquality)
+pct_miss_case(airquality)
+```
+
+Si se quieren estudiar los valores faltantes por filas, `miss_case_summary()` devuelve un dataset con tantas filas como observaciones tenga nuestro conjunto de datos incluyendo la cantidad de valores faltantes que tiene cada fila, en valor absoluto y en porcentaje. Se muestra a continuación un recorte de la salida. Por ejemplo, la fila 5 de nuestro conjunto tiene 2 valores faltantes, lo cual supone el 33.3% del total. \verb+miss_case_table()+ devuelve la misma información pero resumida, incluyendo tantas filas como cantidades diferentes de valores faltantes haya. Por ejemplo, hay 111 filas con 0 valores faltantes, lo cual supone el 72.5% de las filas. El número máximo de valores faltantes por fila es de 2, pero ocurre solo en el 1.31% de las filas.
+
+```{r}
+miss_case_summary(airquality)
+miss_case_table(airquality)
+```
+
+Estas dos últimas funciones tienen una versión disponible para describir los valores faltantes en las columnas:
+
+```{r}
+miss_var_summary(airquality)
+miss_case_table(airquality)
+```
+
+Si estamos interesados en hacer un estudio más pormenorizado de los valores faltantes, podemos combinar estas funciones con otras del paquete `dplyr`, como `group_by()`. Como ejemplo, obtendremos los valores faltantes por mes de seguimiento. Se puede apreciar entonces que la variable `Ozone` está prácticamente vacía durante el mes de junio, en el que se alcanza hasta el 70% de valores faltantes. En septiembre, sin embargo, solamente hay un faltante.
+
+```{r}
+airquality%>% group_by(Month)%>% miss_var_summary()
+```
+
+Esta información también se puede obtener de manera gráfica utilizando funciones del mismo paquete. Por ejemplo, `gg_miss_var()` muestra un lollipop plot, similar a un gráfico de barras horizontal, con el porcentaje de las variables faltantes. Este, como en el último ejemplo, también puede ser estratificado por alguna variable que sea de nuestro interés. Nótese que en la figura estratificada por mes se ha añadido el argumento `show_pct = T`, que muestra  los valores en porcentaje.
+
+```{r}
+library(patchwork)
+p1 <- gg_miss_var(airquality)+ggtitle("General")
+p2 <- gg_miss_var(airquality, facet = Month, show_pct = T) +
+        ggtitle("Per month")
+p1+p2
+```
+
+Finalmente, la función `vis_miss()` puede resultar de mucha ayuda para visualizar la localización de los valores faltantes y para intuir la existencia de algún patrón en los mismos que pudiera ser de utilidad para su análisis. Por ejemplo, se observa cómo la densidad de valores faltantes de `Ozone` va disminuyendo conforme avanza el tiempo. 
+
+```{r}
+vis_miss(airquality)
+```
+
+En el caso de que necesitáramos un conjunto de datos sin valores faltantes, podríamos eliminar las variables u observaciones con mayor cantidad de estos valores. Una variable que tenga más de un 60-80% de valores faltantes es poco recuperable, y no está aconsejado hacerlo. Una manera sencilla de quedarnos únicamente con las observaciones completas es mediante la función `complete.cases()`, que devuelve un vector lógico según la fila entera esté o no completa. 
+
+```{r}
+airquality <- airquality[complete.cases(airquality),]
+```
+
+## Imputación 
+
+Aunque hay muchos métodos para hacer imputación de datos, en este libro se presenta la metodología *Multivariate Imputation by Chained Equations* (MICE), pues cuenta con un gran soporte en la comunidad por su estabilidad. MICE realiza múltiples imputaciones y nos permite escoger la que queramos. Hay gran cantidad de métodos que se pueden utilizar en función del tipo de dato que queramos imputar u otras necesidades.
+
+Para generar el objeto de la imputación utilizamos la siguiente línea de código. `m` indicará la cantidad de veces que se hará la imputación, mientras que `meth` el método que se utilizará. El método utilizado es *predicitive mean matching* (`pmm`), y resulta de los más polivalentes, pues se puede aplicar a cualquier tipo de variable. Consiste en rellenar los valores faltantes con otros valores ya presentes en el conjunto de datos. De esta manera se reduce mucho el sesgo y la probabilidad de tener valores anómalos. Finalmente, marcar la `seed` nos permitirá obtener resultados reproducibles. 
+
+```{r}
+library(mice)
+impData <- mice(airquality, m = 5, meth = "pmm", seed = 13)
+```
+
+Una vez realizada la imputación, hay que escoger una de las `m` imputaciones. Para ello, vamos a utilizar el siguiente código, que mostrará la distribución de las variables originales y de las imputadas, seleccionando aquella imputación cuya distribución se asemeje más a la original. 
+
+```{r}
+plotData <- data.frame(Ozone = airquality$Ozone, Solar.R = airquality$Solar.R, Data = "Original")%>%
+  tidyr::gather(key = "Variable", value = "Value", -Data)
+
+m = 5
+for (i in 1:m){
+    temp = complete(impData,i)%>%select(Ozone, Solar.R)%>%
+            mutate(Data = paste0("Imp", i))%>%
+            tidyr::gather(key = "Variable", value = "Value", -Data)
+    plotData = rbind(plotData, temp)
+}
+
+ggplot(plotData, aes(x = Value, col = Data, fill = Data))+
+    geom_density(lwd = 1, alpha = 0.1, linetype = 8)+
+    facet_wrap(Variable~., scales = "free_y")
+```
+
+De acuerdo a la gráfica, se intuye que todas las imputaciones obtienen distribuciones muy semejantes, ya que hay mucho solape entre ellas, siendo la número 3 en esta ocasión ligeramente más similar a la original. La función `complete()` nos permite recuperar una, la que consideremos oportuna, de las `m` imputaciones. En este caso se rescata la tercera. 
+
+```{r}
+airqualityImp <- complete(impData, 3)
+```
+
+Con esto, ya tendríamos un conjunto de datos con todos sus valores completos.
